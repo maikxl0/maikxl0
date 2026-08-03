@@ -1,0 +1,9 @@
+# lo único que necesita la automatización diaria
+requests==2.32.3
+beautifulsoup4==4.12.3
+
+# solo para el retrato, se ejecuta en tu máquina cuando cambias de foto
+pillow
+numpy
+opencv-python
+rembg

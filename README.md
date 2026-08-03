@@ -1,1 +1,2 @@
-coming soon
+.venv/
+__pycache__/
