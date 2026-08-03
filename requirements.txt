@@ -1,0 +1,137 @@
+#!/usr/bin/env python3
+"""
+render_heatmap_svg.py — dibuja contrib-heatmap.svg desde el JSON.
+
+El calendario clásico de 53 semanas × 7 días, en cajas redondeadas con una
+rampa verde. Se revela una sola vez en diagonal (keyframes CSS que corren al
+cargar y se congelan: nada de "brillo" en bucle), con leyenda Less→More y un
+pie de estadísticas.
+
+    python scripts/render_heatmap_svg.py
+"""
+
+import datetime as dt
+import json
+import os
+import pathlib
+
+import config
+
+SRC = pathlib.Path("data/contributions.json")
+OUT = pathlib.Path("contrib-heatmap.svg")
+
+CELL = 12
+GAP = 3
+PITCH = CELL + GAP                 # 15 px por semana / por día
+
+LEFT = 36                          # sitio para Mon/Wed/Fri
+TOP = 34                           # sitio para los meses
+RIGHT = 32
+W = 860                            # = 370 + 490, los anchos del README
+
+DIAG = 0.016                       # retardo por paso en diagonal
+DUR = 0.45
+STATIC = os.environ.get("STATIC") == "1"
+
+MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+
+def esc(s: str) -> str:
+    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def main() -> None:
+    if not SRC.exists():
+        raise SystemExit(
+            f"falta {SRC} — ejecuta antes: python scripts/fetch_contributions.py")
+
+    data = json.loads(SRC.read_text(encoding="utf-8"))
+    days, stats = data["days"], data["stats"]
+
+    cells, month_labels = [], []
+    col = 0
+    seen_months: set[str] = set()
+
+    for d in days:
+        date = dt.date.fromisoformat(d["date"])
+        row = (date.weekday() + 1) % 7          # domingo = 0, como GitHub
+        if row == 0 and d is not days[0]:
+            col += 1
+
+        x = LEFT + col * PITCH
+        y = TOP + row * PITCH
+        fill = config.PALETTE[min(d["level"], len(config.PALETTE) - 1)]
+        delay = f'{(col + row) * DIAG:.2f}s'
+
+        style = "" if STATIC else f' style="animation-delay:{delay}"'
+        label = (f'{d["count"]} contributions on {d["date"]}'
+                 if d["count"] else f'no contributions on {d["date"]}')
+        cells.append(
+            f'<rect class="c" x="{x}" y="{y}" width="{CELL}" height="{CELL}" '
+            f'rx="2.5" fill="{fill}"{style}><title>{esc(label)}</title></rect>')
+
+        # etiqueta de mes sobre la primera columna de cada mes nuevo
+        key = d["date"][:7]
+        if key not in seen_months and date.day <= 7:
+            seen_months.add(key)
+            month_labels.append(
+                f'<text class="lbl" x="{x}" y="{TOP - 12}">'
+                f'{MONTHS[date.month - 1]}</text>')
+
+    grid_bottom = TOP + 7 * PITCH
+    legend_y = grid_bottom + 22
+    H = grid_bottom + 62
+
+    weekdays = "".join(
+        f'<text class="lbl" x="{LEFT - 8}" y="{TOP + r * PITCH + 9.5}" '
+        f'text-anchor="end">{n}</text>'
+        for r, n in ((1, "Mon"), (3, "Wed"), (5, "Fri")))
+
+    lx = W - RIGHT - (len(config.PALETTE) * PITCH) - 78
+    legend = f'<text class="lbl" x="{lx}" y="{legend_y + 9.5}">Less</text>'
+    for i, c in enumerate(config.PALETTE):
+        legend += (f'<rect x="{lx + 40 + i * PITCH}" y="{legend_y}" '
+                   f'width="{CELL}" height="{CELL}" rx="2.5" fill="{c}"/>')
+    legend += (f'<text class="lbl" x="{lx + 46 + len(config.PALETTE) * PITCH}" '
+               f'y="{legend_y + 9.5}">More</text>')
+
+    foot = f'{stats["total"]:,} contributions in the last year'
+    sub = (f'current streak {stats["current_streak"]}d  ·  '
+           f'longest {stats["longest_streak"]}d  ·  '
+           f'best day {stats["busiest_day"]["count"]}  ·  '
+           f'{stats["active_days"]}/{stats["days_tracked"]} active days')
+
+    anim = "" if STATIC else f"""
+    .c {{ opacity:0; transform-box:fill-box; transform-origin:center;
+         animation: pop {DUR}s cubic-bezier(.2,.8,.3,1) forwards; }}
+    @keyframes pop {{ from {{ opacity:0; transform:translateY(-7px) scale(.55); }}
+                     to   {{ opacity:1; transform:none; }} }}
+    @media (prefers-reduced-motion: reduce) {{
+      .c {{ opacity:1; animation:none; }} }}"""
+
+    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}"
+     viewBox="0 0 {W} {H}" role="img"
+     aria-label="Calendario de contribuciones de {esc(data['username'])}">
+  <style>
+    text  {{ font-family:{config.MONO}; }}
+    .lbl  {{ font-size:11px; fill:{config.DIM}; }}
+    .tot  {{ font-size:13px; fill:{config.FG}; font-weight:700; }}
+    .sub  {{ font-size:11px; fill:{config.DIM}; }}{anim}
+  </style>
+  <rect width="100%" height="100%" fill="{config.BG}" rx="10"/>
+{chr(10).join('  ' + m for m in month_labels)}
+  {weekdays}
+{chr(10).join('  ' + c for c in cells)}
+  {legend}
+  <text class="tot" x="{LEFT}" y="{legend_y + 10}">{foot}</text>
+  <text class="sub" x="{LEFT}" y="{legend_y + 30}">{sub}</text>
+</svg>
+"""
+    OUT.write_text(svg, encoding="utf-8")
+    print(f"✓ {OUT}  ({W}×{H}, {len(cells)} días"
+          f"{', estático' if STATIC else ''})")
+
+
+if __name__ == "__main__":
+    main()
