@@ -1,0 +1,33 @@
+name: Update profile art
+
+"on":
+  schedule:
+    - cron: "17 6 * * *"      # ~06:17 UTC cada día
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  heatmap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # El retrato no se regenera aquí, así que no instalamos pillow /
+      # opencv / rembg: solo lo que necesita el heatmap.
+      - run: pip install requests==2.32.3 beautifulsoup4==4.12.3
+
+      - run: python scripts/fetch_contributions.py
+      - run: python scripts/render_heatmap_svg.py
+
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: refresh contribution graph [skip ci]"
+          file_pattern: "data/contributions.json contrib-heatmap.svg"
