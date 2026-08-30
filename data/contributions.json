@@ -1,21 +1,21 @@
 {
   "username": "maikxl0",
-  "generated_at": "2026-08-29T12:43:58+00:00",
+  "generated_at": "2026-08-30T11:59:41+00:00",
   "range": {
-    "from": "2025-08-24",
-    "to": "2026-08-29"
+    "from": "2025-08-31",
+    "to": "2026-08-30"
   },
   "stats": {
-    "total": 76,
-    "days_tracked": 371,
-    "active_days": 45,
+    "total": 77,
+    "days_tracked": 365,
+    "active_days": 46,
     "busiest_day": {
       "date": "2026-08-03",
       "count": 20
     },
-    "current_streak": 26,
-    "longest_streak": 26,
-    "daily_average": 0.2,
+    "current_streak": 27,
+    "longest_streak": 27,
+    "daily_average": 0.21,
     "monthly": {
       "2025-08": 0,
       "2025-09": 1,
@@ -29,45 +29,10 @@
       "2026-05": 2,
       "2026-06": 5,
       "2026-07": 13,
-      "2026-08": 46
+      "2026-08": 47
     }
   },
   "days": [
-    {
-      "date": "2025-08-24",
-      "count": 0,
-      "level": 0
-    },
-    {
-      "date": "2025-08-25",
-      "count": 0,
-      "level": 0
-    },
-    {
-      "date": "2025-08-26",
-      "count": 0,
-      "level": 0
-    },
-    {
-      "date": "2025-08-27",
-      "count": 0,
-      "level": 0
-    },
-    {
-      "date": "2025-08-28",
-      "count": 0,
-      "level": 0
-    },
-    {
-      "date": "2025-08-29",
-      "count": 0,
-      "level": 0
-    },
-    {
-      "date": "2025-08-30",
-      "count": 0,
-      "level": 0
-    },
     {
       "date": "2025-08-31",
       "count": 0,
@@ -1885,6 +1850,11 @@
     },
     {
       "date": "2026-08-29",
+      "count": 1,
+      "level": 2
+    },
+    {
+      "date": "2026-08-30",
       "count": 0,
       "level": 0
     }
